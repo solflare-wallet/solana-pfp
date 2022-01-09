@@ -1,5 +1,5 @@
 import { AccountInfo, PublicKey } from '@solana/web3.js';
-import jdenticon from 'jdenticon';
+import { toSvg } from 'jdenticon';
 import fetch from 'cross-fetch';
 import btoa from 'btoa';
 import { ProfilePictureAccountLayout } from './layouts';
@@ -47,7 +47,7 @@ export function generateUrl (url: string | null, ownerPublicKey: PublicKey, conf
   }
 
   if (config.fallback) {
-    const svg = jdenticon.toSvg(ownerPublicKey.toString(), 100);
+    const svg = toSvg(ownerPublicKey.toString(), 100);
     return `data:image/svg+xml;base64,${btoa(svg)}`;
   }
 
