@@ -76,6 +76,80 @@ export async function getProfilePicture (connection: Connection, publicKey: Publ
   }
 }
 
+export async function getMultipleProfilePictures (connection: Connection, publicKeys: PublicKey[], config: ProfilePictureConfig = { fallback: true }): Promise<ProfilePicture[]> {
+  try {
+    const publicKeyMap = publicKeys.reduce((acc, publicKey) => {
+      acc[publicKey.toString()] = {
+        isAvailable: true
+      };
+      return acc;
+    }, {});
+
+    const profilePictureAccountPublicKeys = await Promise.all(publicKeys.map((publicKey) => getProfilePicturePDA(publicKey)));
+
+    const profilePictureAccounts = await connection.getMultipleAccountsInfo(profilePictureAccountPublicKeys);
+
+    profilePictureAccounts.forEach((profilePictureAccount, index) => {
+      const key = publicKeys[index].toString();
+      if (profilePictureAccount) {
+        publicKeyMap[key].profilePictureData = decodeProfilePictureAccount(profilePictureAccount);
+      } else {
+        delete publicKeyMap[key];
+      }
+    });
+
+    // @ts-ignore
+    const publicKeysWithPDA = Object.keys(publicKeyMap);
+    const tokenAccountPublicKeys = Object.values(publicKeyMap).map(({ profilePictureData }) => profilePictureData.nftTokenAccount.toString());
+
+    // @ts-ignore
+    const tokenAccountsRpcResponse = await connection._rpcRequest('getMultipleAccounts', connection._buildArgs([ tokenAccountPublicKeys ], undefined, 'jsonParsed'));
+
+    if (tokenAccountsRpcResponse?.error || !tokenAccountsRpcResponse?.result?.value) {
+      throw new Error('Failed to fetch token accounts');
+    }
+
+    const tokenAccounts = tokenAccountsRpcResponse?.result?.value || [];
+
+    tokenAccounts.forEach((tokenAccount, index) => {
+      const key = publicKeysWithPDA[index];
+
+      if (!tokenAccount) {
+        delete publicKeyMap[key];
+        return;
+      }
+
+      // @ts-ignore
+      if (tokenAccount?.data?.parsed?.info?.tokenAmount?.uiAmount < 1) {
+        delete publicKeyMap[key];
+        return;
+      }
+
+      // @ts-ignore
+      if (tokenAccount?.data?.parsed?.info?.owner !== key) {
+        delete publicKeyMap[key];
+        return;
+      }
+
+      // @ts-ignore
+      if (tokenAccount?.data?.parsed?.info?.mint !== publicKeyMap[key].profilePictureData.nftMint.toString()) {
+        delete publicKeyMap[key];
+        return;
+      }
+    });
+
+    console.log(publicKeyMap);
+
+    return [];
+  } catch (err) {
+    console.log(err);
+    return publicKeys.map((publicKey) => ({
+      isAvailable: false,
+      url: generateUrl(null, publicKey, config)
+    }));
+  }
+}
+
 export async function createSetProfilePictureTransaction (ownerPublicKey: PublicKey, mintPublicKey: PublicKey, tokenAccountPublicKey: PublicKey): Promise<Transaction> {
   const profilePictureAccountPublicKey = await getProfilePicturePDA(ownerPublicKey);
 
