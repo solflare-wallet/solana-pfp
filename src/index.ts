@@ -7,7 +7,7 @@ import {
   TransactionInstruction
 } from '@solana/web3.js';
 import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
-import { decodeProfilePictureAccount, generateUrl, getImageUrlFromMetadataUrl, getProfilePicturePDA } from './utils';
+import { decodeProfilePictureAccount, generateUrl, getMetadataFromUrl, getProfilePicturePDA } from './utils';
 import { ProfilePicture, ProfilePictureConfig } from './types';
 import { Buffer } from 'buffer';
 
@@ -54,11 +54,19 @@ export async function getProfilePicture (connection: Connection, publicKey: Publ
       throw new Error('No metadata URL');
     }
 
-    const imageUrl = await getImageUrlFromMetadataUrl(nftMetadata.data.data.uri);
+    const metadata = await getMetadataFromUrl(nftMetadata.data.data.uri);
+
+    if (!metadata) {
+      throw new Error('No metadata');
+    }
 
     return {
       isAvailable: true,
-      url: generateUrl(imageUrl, publicKey, config)
+      url: generateUrl(metadata?.image || null, publicKey, config),
+      name: nftMetadata?.data?.data?.name || '',
+      metadata,
+      tokenAccount: profilePictureData.nftTokenAccount,
+      mintAccount: profilePictureData.nftMint
     };
   } catch (err) {
     return {
@@ -68,7 +76,7 @@ export async function getProfilePicture (connection: Connection, publicKey: Publ
   }
 }
 
-export async function createSetProfilePrictureTransaction (ownerPublicKey: PublicKey, mintPublicKey: PublicKey, tokenAccountPublicKey: PublicKey): Promise<Transaction> {
+export async function createSetProfilePictureTransaction (ownerPublicKey: PublicKey, mintPublicKey: PublicKey, tokenAccountPublicKey: PublicKey): Promise<Transaction> {
   const profilePictureAccountPublicKey = await getProfilePicturePDA(ownerPublicKey);
 
   const nftMetadataAccountPublicKey = await Metadata.getPDA(mintPublicKey);

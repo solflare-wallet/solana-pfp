@@ -3,6 +3,10 @@ import { PublicKey } from '@solana/web3.js';
 export interface ProfilePicture {
   isAvailable: boolean;
   url: string;
+  name?: string;
+  metadata?: any;
+  tokenAccount?: PublicKey;
+  mintAccount?: PublicKey;
 }
 
 export interface ProfilePictureConfig {

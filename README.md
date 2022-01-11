@@ -34,7 +34,7 @@ Object with the following fields:
 ### Transactions for setting an NFT for the profile picture
 
 ```javascript
-function createSetProfilePrictureTransaction (ownerPublicKey: PublicKey, mintPublicKey: PublicKey, tokenAccountPublicKey: PublicKey): Promise<Transaction>
+function createSetProfilePictureTransaction (ownerPublicKey: PublicKey, mintPublicKey: PublicKey, tokenAccountPublicKey: PublicKey): Promise<Transaction>
 ```
 
 #### Params
