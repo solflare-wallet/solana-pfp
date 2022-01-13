@@ -1,5 +1,11 @@
 # @solflare-wallet/pfp
 
+## Description
+
+The Solana Profile Picture Protocol allows Solana users to set a single Metaplex-standard NFT as a universal PFP for the Solana blockchain. 
+
+Individual Solana protocols can use the documentation below both to show PFPs in their FE, and to provide functionality within their own FE to allow users to set a new PFP. 
+
 ## Example
 
 ```javascript
