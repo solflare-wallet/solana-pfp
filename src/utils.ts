@@ -5,6 +5,7 @@ import btoa from 'btoa';
 import { ProfilePictureAccountLayout } from './layouts';
 import { ProfilePictureAccount, ProfilePictureConfig } from './types';
 import { PROFILE_PICTURE_PROGRAM } from './index';
+import { Buffer } from 'buffer';
 
 const PROFILE_PICTURE_PREFIX = 'nft_profile';
 
