@@ -10,7 +10,8 @@ export interface ProfilePicture {
 }
 
 export interface ProfilePictureConfig {
-  fallback: boolean;
+  fallback?: boolean;
+  resize?: any;
 }
 
 export interface ProfilePictureAccount {

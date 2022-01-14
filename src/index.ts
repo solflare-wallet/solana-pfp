@@ -13,7 +13,16 @@ import { Buffer } from 'buffer';
 
 export const PROFILE_PICTURE_PROGRAM = new PublicKey('6UQLqKYWqErHqdsX6WtANQsMmvfKtWNuSSRj6ybg5in3');
 
-export async function getProfilePicture (connection: Connection, publicKey: PublicKey, config: ProfilePictureConfig = { fallback: true }): Promise<ProfilePicture> {
+const DEFAULT_CONFIG = {
+  fallback: true,
+  resize: {
+    width: 100
+  }
+};
+
+export async function getProfilePicture (connection: Connection, publicKey: PublicKey, config?: ProfilePictureConfig): Promise<ProfilePicture> {
+  const finalConfig = { ...DEFAULT_CONFIG, ...config };
+  
   try {
     const profilePictureAccountPublicKey = await getProfilePicturePDA(publicKey);
 
@@ -62,7 +71,7 @@ export async function getProfilePicture (connection: Connection, publicKey: Publ
 
     return {
       isAvailable: true,
-      url: generateUrl(metadata?.image || null, publicKey, config),
+      url: generateUrl(metadata?.image || null, publicKey, finalConfig),
       name: nftMetadata?.data?.data?.name || '',
       metadata,
       tokenAccount: profilePictureData.nftTokenAccount,
@@ -71,7 +80,7 @@ export async function getProfilePicture (connection: Connection, publicKey: Publ
   } catch (err) {
     return {
       isAvailable: false,
-      url: generateUrl(null, publicKey, config)
+      url: generateUrl(null, publicKey, finalConfig)
     };
   }
 }

@@ -9,6 +9,23 @@ import { Buffer } from 'buffer';
 
 const PROFILE_PICTURE_PREFIX = 'nft_profile';
 
+const canBeResized = (url) => {
+  return !(url.includes('.svg') || url.endsWith('.svg') || url.endsWith('=svg') || url.endsWith('.gif') || url.endsWith('=gif') || url.startsWith('data:'));
+};
+
+export const getResizedImageUrl = (url, options = { width: 100 }) => {
+  if (!url) {
+    return false;
+  }
+
+  if (!canBeResized(url)) {
+    return url;
+  }
+
+  const optionsString = Object.keys(options).map((item) => `${encodeURIComponent(item)}=${encodeURIComponent(options[item])}`).join(',');
+  return `https://solana-cdn.com/cdn-cgi/image/${optionsString}/${url}`;
+};
+
 export function decodeProfilePictureAccount (account: AccountInfo<any>): ProfilePictureAccount {
   if (account.data.length !== ProfilePictureAccountLayout.span) {
     throw new Error(`Invalid account size. Expected ${ProfilePictureAccountLayout.span}, got ${account.data.length}`);
@@ -42,6 +59,10 @@ export async function getMetadataFromUrl (url: string) {
 
 export function generateUrl (url: string | null, ownerPublicKey: PublicKey, config: ProfilePictureConfig): string {
   if (url) {
+    if (config.resize) {
+      return getResizedImageUrl(url, config.resize)
+    }
+
     return url;
   }
 
