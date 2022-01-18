@@ -31,7 +31,7 @@ function getProfilePicture (connection: Connection, publicKey: PublicKey, config
 - `publicKey` - The public key of the wallet
 - `config` (optional)
   - `fallback` - Boolean, use a fallback generated image (default `true`)
-  - `resize` - Object with Cloudflare image resize params (default `{ widht: 100 }`)
+  - `resize` - Object with Cloudflare image resize params (default `{ width: 100 }`)
 
 #### Return value
 Object with the following fields:
