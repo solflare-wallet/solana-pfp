@@ -6,10 +6,11 @@ import {
   Transaction,
   TransactionInstruction
 } from '@solana/web3.js';
-import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
-import { decodeProfilePictureAccount, generateUrl, getMetadataFromUrl, getProfilePicturePDA } from './utils';
+import { generateUrl, getProfilePicturePDA } from './utils';
 import { ProfilePicture, ProfilePictureConfig } from './types';
 import { Buffer } from 'buffer';
+import { pushRequest } from './batchedLoader';
+import { findMetadataPda } from '@metaplex-foundation/js';
 
 export const PROFILE_PICTURE_PROGRAM = new PublicKey('6UQLqKYWqErHqdsX6WtANQsMmvfKtWNuSSRj6ybg5in3');
 
@@ -22,58 +23,17 @@ const DEFAULT_CONFIG = {
 
 export async function getProfilePicture (connection: Connection, publicKey: PublicKey, config?: ProfilePictureConfig): Promise<ProfilePicture> {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
-  
+
   try {
-    const profilePictureAccountPublicKey = await getProfilePicturePDA(publicKey);
-
-    const profilePictureAccount = await connection.getAccountInfo(profilePictureAccountPublicKey);
-
-    if (!profilePictureAccount) {
-      throw new Error('PDA is empty');
-    }
-
-    const profilePictureData = decodeProfilePictureAccount(profilePictureAccount);
-
-    const tokenAccount = await connection.getParsedAccountInfo(profilePictureData.nftTokenAccount);
-
-    if (!tokenAccount) {
-      throw new Error('No token account');
-    }
-
-    // @ts-ignore
-    if (tokenAccount?.value?.data?.parsed?.info?.tokenAmount?.uiAmount < 1) {
-      throw new Error('No NFT token in the token account');
-    }
-
-    // @ts-ignore
-    if (tokenAccount?.value?.data?.parsed?.info?.owner !== publicKey.toString()) {
-      throw new Error('Invalid token account owner');
-    }
-
-    // @ts-ignore
-    if (tokenAccount?.value?.data?.parsed?.info?.mint !== profilePictureData.nftMint.toString()) {
-      throw new Error('Invalid token account mint');
-    }
-
-    const nftMetadataAccountPublicKey = await Metadata.getPDA(profilePictureData.nftMint);
-
-    const nftMetadata = await Metadata.load(connection, nftMetadataAccountPublicKey);
-
-    if (!nftMetadata?.data?.data?.uri) {
-      throw new Error('No metadata URL');
-    }
-
-    const metadata = await getMetadataFromUrl(nftMetadata.data.data.uri);
-
-    if (!metadata) {
-      throw new Error('No metadata');
-    }
+    const { profilePictureData, metadata } = await new Promise((resolve: (value: any) => any, reject) => {
+      pushRequest(connection, publicKey, resolve, reject);
+    });
 
     return {
       isAvailable: true,
-      url: generateUrl(metadata?.image || null, publicKey, finalConfig),
-      name: nftMetadata?.data?.data?.name || '',
-      metadata,
+      url: generateUrl(metadata?.json?.image || null, publicKey, finalConfig),
+      name: metadata?.name || '',
+      metadata: metadata?.json || {},
       tokenAccount: profilePictureData.nftTokenAccount,
       mintAccount: profilePictureData.nftMint
     };
@@ -88,7 +48,7 @@ export async function getProfilePicture (connection: Connection, publicKey: Publ
 export async function createSetProfilePictureTransaction (ownerPublicKey: PublicKey, mintPublicKey: PublicKey, tokenAccountPublicKey: PublicKey): Promise<Transaction> {
   const profilePictureAccountPublicKey = await getProfilePicturePDA(ownerPublicKey);
 
-  const nftMetadataAccountPublicKey = await Metadata.getPDA(mintPublicKey);
+  const nftMetadataAccountPublicKey = findMetadataPda(mintPublicKey);
 
   const transaction = new Transaction();
 

@@ -21,6 +21,8 @@
     "suppressImplicitAnyIndexErrors": true,
     "allowSyntheticDefaultImports": true,
     "downlevelIteration": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
     "types": [
       "node"
     ]
